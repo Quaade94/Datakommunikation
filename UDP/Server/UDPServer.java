@@ -25,7 +25,7 @@ class UDPServer{
 			InetAddress IPAddress = receivePacket.getAddress();
 			int port = receivePacket.getPort();
 			
-			reciept = "Your package was recieved";
+			reciept = "Your package was recieved: " + input;
 			sendData = reciept.getBytes();
 			DatagramPacket sendreciept = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 			serverSocket.send(sendreciept);
