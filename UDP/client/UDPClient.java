@@ -21,7 +21,7 @@ class UDPClient{
 		ArrayList<String> received = new ArrayList<String>();
 		ArrayList<String> packets = new ArrayList<String>();
 
-		byte[] receivedData = new byte[1024];
+		
 		byte[] sendDataServer = new byte[1024];
 		
 		String input;
@@ -57,9 +57,11 @@ class UDPClient{
 				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, 9876);
 				clientSocket.send(lastPacket);
 
-				//Receives packages from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
+			
+				//Receives packages (in this case the acks) from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
 				for(int i = 0; i < packets.size(); i++){
 					//Receives one package from the server
+					byte[] receivedData = new byte[1024];
 					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
 					clientSocket.receive(receivedPacket);
 
@@ -69,9 +71,11 @@ class UDPClient{
 					received.add(input);
 					
 				}	
+							
 				
 				while(true){
-					//Receives one package from the server
+					//Receives one package from the server (in this case the fruit response)
+					byte[] receivedData = new byte[1024];
 					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
 					clientSocket.receive(receivedPacket);
 

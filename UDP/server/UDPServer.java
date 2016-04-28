@@ -84,17 +84,26 @@ class UDPServer{
 
 				//SENPAI NOTICE ME
 				//TODO fix
-				for(int i = 0; i < packets.size(); i++){
 					for(int i = 0; i < barray.size(); i++){
 						DatagramPacket sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
 						serverSocket.send(sendPacket);	
 					}
-				}
-
+				
 				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
 				serverSocket.send(lastPacket);
+				
+				for(int i = 0; i < packets.size(); i++){
+					//Receives one package from the client
+					DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
+					serverSocket.receive(receivedPacket);
+					
+					//Converts the package into a string
+					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
+					System.out.println("RECEIVED: " + input);
+										
+				}	
 			}
 		}
-	}
+	
 }
 }
