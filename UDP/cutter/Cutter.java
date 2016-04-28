@@ -1,13 +1,25 @@
-package Server;
+package cutter;
 
 import java.util.ArrayList;
 
 public class Cutter {
 
-	private ArrayList<String> messageCutting(String message, int maxAmountOfPackets) {
+	private int clusterSize;
+	private int maxAmountOfPackets;
+	
+	/**
+	 * Creates a cutter to cut a message into smaller pieces for the packages
+	 * @param clusterSize The size of the cutted messages, ie.: 1024 = 1024 bytes.
+	 * @param maxAmountOfPackets The amount of packages that can be send at a time, ie.: 13 = 13 packages.
+	 */
+	public Cutter(int clusterSize, int maxAmountOfPackets){
+		this.clusterSize = clusterSize;
+		this.maxAmountOfPackets = maxAmountOfPackets;
+	}
+	
+	public ArrayList<String> messageCutting(String message) throws UDPException {
 
-		//The size of the message in one packet (1 char = 1 byte)
-		int clusterSize = 1024;
+		
 
 		// Index for cutting the message
 		int index1 = 0;
@@ -27,7 +39,7 @@ public class Cutter {
 		//If the size of the message is too large, this will trigger
 		if (amountOfPackets >= maxAmountOfPackets){
 			System.out.println("String is " + remainder + " bytes too large");
-			return null;
+			throw new UDPException();
 		}
 
 		//Cutting logic
