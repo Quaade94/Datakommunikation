@@ -14,11 +14,8 @@ class UDPServer{
 	private static String reciept;
 	private static InetAddress IPAddress;
 	private static int port;
-	private static ArrayList<String> received = new ArrayList<String>();
-	private static ArrayList<byte[]> barray = new ArrayList<byte[]>();
-	private static ArrayList<String> packets = new ArrayList<String>();
-	private static byte[] receiveData = new byte[1024];
-	private static byte[] sendData = new byte[1024];
+
+
 
 	private static DatagramSocket serverSocket;
 
@@ -32,21 +29,30 @@ class UDPServer{
 		lastPack = last.getBytes();
 
 		while(true){
-
+			ArrayList<String> received = new ArrayList<String>();
+			ArrayList<byte[]> barray = new ArrayList<byte[]>();
+			ArrayList<String> packets = new ArrayList<String>();
+			
 			while(true){
-				//Receives a motherfucking package from a shitty motherfucker
+				//Receives packages from the client, until package containing the string "last" is received
 				byte[] receiveData = new byte[1024];
+				byte[] sendData = new byte[1024];
 				DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
 				serverSocket.receive(receivedPacket);
 
-				//Makes that fucking package into a string... bitch...
+				//Makes the package into a string
 				input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-				System.out.println("RECEIVED: " + input);
+				System.out.println("FROM CLIENT: " + input);
 				received.add(input);
 
-				//Get the adress of that motherfucker sending it to ya. He ain't snitching. 
+				//Gets the adress of the sender
 				IPAddress = receivedPacket.getAddress();
 				port = receivedPacket.getPort();			
+				
+				reciept = "Your package was recieved: " + input;
+				sendData = reciept.getBytes();
+				DatagramPacket sendreciept = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+				serverSocket.send(sendreciept);
 				
 				if(input.equals("last")){
 					break;
@@ -60,7 +66,7 @@ class UDPServer{
 				completeMessage = completeMessage + received.get(i);
 			}
 
-			//That motherfucker called the cops. SHIT. RUN.
+			//if the message is "close" shutdown
 			if(completeMessage.equals("close")){
 				serverSocket.close();
 				System.out.println("Shutting down");
@@ -69,10 +75,12 @@ class UDPServer{
 			}else{		
 
 				try{
+					id = 0;
 					id = Integer.parseInt(completeMessage.substring(0));
-					output = fruit.getFruit(id);
+					output = fruit.getFruit(id-1);
 				}catch(Exception e){
-					output = "You need to enter a valid whole number";
+					output = "You need to enter a valid whole number(Between 1-11)";
+					e.printStackTrace();
 				}
 
 				packets = cutter.messageCutting(output);
@@ -84,11 +92,13 @@ class UDPServer{
 				//SENPAI NOTICE ME
 					for(int i = 0; i < barray.size(); i++){
 						DatagramPacket sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
+						System.out.println("TO CLIENT: " + packets.get(i));
 						serverSocket.send(sendPacket);	
 					}
 				
 				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
 				serverSocket.send(lastPacket);
+				System.out.println("TO CLIENT: last");
 				
 				//Receives ack(s) from the fruit
 				for(int i = 0; i < packets.size()+1; i++){
@@ -99,7 +109,7 @@ class UDPServer{
 					
 					//Converts the package into a string
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-					System.out.println("RECEIVED: " + input);										
+					System.out.println("FROM CLIENT: " + input);										
 				}	
 			}
 		}

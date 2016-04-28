@@ -17,10 +17,6 @@ class UDPClient{
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
 		
-		ArrayList<byte[]> barray = new ArrayList<byte[]>();
-		ArrayList<String> received = new ArrayList<String>();
-		ArrayList<String> packets = new ArrayList<String>();
-
 		
 		byte[] sendDataServer = new byte[1024];
 		
@@ -34,6 +30,10 @@ class UDPClient{
 
 		while(true){
 
+			ArrayList<String> packets = new ArrayList<String>();
+			ArrayList<byte[]> barray = new ArrayList<byte[]>();
+			ArrayList<String> received = new ArrayList<String>();
+			
 			//Input from user
 			String sentence = inFromUser.readLine();
 
@@ -50,13 +50,16 @@ class UDPClient{
 				//Creates packages of the bytes and sends them to the receiver
 				for(int i = 0; i < barray.size(); i++){
 					DatagramPacket sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, 9876);
+					System.out.println("i: "+ i);
+					System.out.println("packets lengt: "+packets.size());
+					System.out.println("TO SERVER: " + packets.get(i));
 					clientSocket.send(sendPacket);	
 				}
 				
 				//Sends the last package
 				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, 9876);
 				clientSocket.send(lastPacket);
-
+				System.out.println("TO SERVER: last");
 			
 				//Receives packages (in this case the acks) from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
 				for(int i = 0; i < packets.size()+1; i++){
@@ -67,11 +70,14 @@ class UDPClient{
 
 					//Converts the package into a string
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-					System.out.println("RECEIVED: " + input);
-					received.add(input);
-					
+					System.out.println("FROM SERVER: " + input);			
 				}	
-							
+					
+				if (sentence.equals("close")){
+					clientSocket.close();
+					System.out.println("Shutting Down");
+					System.exit(0);
+				}
 				
 				while(true){
 					//Receives one package from the server (in this case the fruit response)
@@ -81,7 +87,6 @@ class UDPClient{
 
 					//Converts the package into a string
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-					System.out.println("RECEIVED: " + input);
 					received.add(input);
 					
 					//Gets the address of sender
