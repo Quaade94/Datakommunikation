@@ -51,17 +51,47 @@ class UDPClient{
 		while(true){
 			
 		String sentence = inFromUser.readLine();
-					
+		
+		sentence.getBytes();
+							
 		sendData1 = sentence.getBytes();
-					
+		
+		//Sending DATA
 		DatagramPacket sendPacket = new DatagramPacket(sendData1, sendData1.length,           IPAddress, 9876);
 		clientSocket.send(sendPacket);
-		DatagramPacket receivePacket = new DatagramPacket(receiveData1,           receiveData1.length);
-		clientSocket.receive(receivePacket);
-		String modifiedSentence = new String(receivePacket.getData());
+		
+		//Getting ACK (acknowledgement)
+		DatagramPacket ACK = new DatagramPacket(receiveData1, receiveData1.length);
+		clientSocket.receive(ACK);
+		System.out.println(ACK.getOffset());
+		System.out.println(ACK.getLength());
+		System.out.println(ACK.getData());
+		System.out.println(ACK);
+		
+		//Printing the ACK message
+		String ACKstring = new String(ACK.getData(), ACK.getOffset(), ACK.getLength(), "UTF-8");
+		System.out.println("FROM SERVER:" + ACKstring);
+		
+		if(sentence.equals("close")){
+			clientSocket.close();
+			System.out.println("Shutting down");
+			System.exit(0);
+		}
+		
+		//Receiving the actual data (the fruit)
+		DatagramPacket receivedPacket = new DatagramPacket(receiveData2, receiveData2.length);
+		clientSocket.receive(receivedPacket);
+		
+		System.out.println(receivedPacket.getOffset());
+		System.out.println(receivedPacket.getLength());
+		System.out.println(receivedPacket.getData());
+		System.out.println(receivedPacket);
+		
+		//Printing the fruit
+		String FruitString = new String(receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
+		System.out.println("FROM SERVER:" + FruitString);
 		
 		
-		System.out.println("FROM SERVER:" + modifiedSentence);
 		}
 
 //		clientSocket.close();
