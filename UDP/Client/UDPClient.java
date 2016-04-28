@@ -56,15 +56,15 @@ class UDPClient{
 
 				sendData1 = sentence.getBytes();
 
-				//Sending DATA
+				//SENPAI NOTICE ME
 				DatagramPacket sendPacket = new DatagramPacket(sendData1, sendData1.length,           IPAddress, 9876);
 				clientSocket.send(sendPacket);
 
-				//Getting ACK (acknowledgement)
+				//SENPAI NOTICED ME
 				DatagramPacket ACK = new DatagramPacket(receiveData1, receiveData1.length);
 				clientSocket.receive(ACK);
 
-				//Printing the ACK message
+				//WHAT DID SENPAI SAY?!?!?!
 				String ACKstring = new String(ACK.getData(), ACK.getOffset(), ACK.getLength(), "UTF-8");
 				System.out.println("FROM SERVER:" + ACKstring);
 
@@ -74,11 +74,11 @@ class UDPClient{
 					System.exit(0);
 				}
 
-				//Receiving the actual data (the fruit)
+				//IS THIS SENPAIS BANANA??? LEWD!!!
 				DatagramPacket receivedPacket = new DatagramPacket(receiveData2, receiveData2.length);
 				clientSocket.receive(receivedPacket);
 
-				//Printing the fruit
+				//NOO SENPAI NOT THERE SENPAI
 				String FruitString = new String(receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 				System.out.println("FROM SERVER:" + FruitString);
 
