@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class FruitData {
 	ArrayList<String> fruitArray = new ArrayList<String>();
-	
+
 	public FruitData(){
 		this.fruitArray.add("Æble");
 		this.fruitArray.add("Avokado");
@@ -18,7 +18,7 @@ public class FruitData {
 		this.fruitArray.add("Citron");
 		this.fruitArray.add("Honningmelon");
 	}
-	
+
 	public String getFruit(int ID){
 		return fruitArray.get(ID);
 	}
