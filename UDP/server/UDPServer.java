@@ -23,6 +23,28 @@ class UDPServer{
 		FruitData fruit = new FruitData();
 		Cutter cutter = new Cutter(1024, 12);
 		serverSocket = new DatagramSocket(9876);
+		
+		byte[] receiveData = new byte[1024];
+		byte[] sendData = new byte[1024];
+		String serverSYNACK ="SYN+ACK";
+		
+		
+		DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+		serverSocket.receive(receivePacket);		
+		String clientSYN = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
+		System.out.println("RECEIVED: "+clientSYN);
+		
+		InetAddress IPAddress = receivePacket.getAddress();
+		int port = receivePacket.getPort();
+		sendData = serverSYNACK.getBytes();
+		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+		serverSocket.send(sendPacket);
+		System.out.println("SENT: "+serverSYNACK);
+		
+		receivePacket = new DatagramPacket(receiveData, receiveData.length);
+		serverSocket.receive(receivePacket);		
+		String clientACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
+		System.out.println("RECEIVED: "+clientACK);
 
 		String last = "last";
 		byte[] lastPack = new byte[1024];
@@ -35,8 +57,8 @@ class UDPServer{
 			
 			while(true){
 				//Receives packages from the client, until package containing the string "last" is received
-				byte[] receiveData = new byte[1024];
-				byte[] sendData = new byte[1024];
+				receiveData = new byte[1024];
+				sendData = new byte[1024];
 				DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
 				serverSocket.receive(receivedPacket);
 
@@ -84,13 +106,13 @@ class UDPServer{
 
 				packets = cutter.messageCutting(output);
 				for(int i = 0; i < packets.size(); i++){
-					byte[] sendData = new byte[1024];
+					sendData = new byte[1024];
 					barray.add(sendData = packets.get(i).getBytes());
 				}
 
 				//SENPAI NOTICE ME
 					for(int i = 0; i < barray.size(); i++){
-						DatagramPacket sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
+						sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
 						System.out.println("TO CLIENT: " + packets.get(i));
 						serverSocket.send(sendPacket);	
 					}
@@ -101,7 +123,7 @@ class UDPServer{
 				
 				//Receives ack(s) from the fruit
 				for(int i = 0; i < packets.size()+1; i++){
-					byte[] receiveData = new byte[1024];
+					receiveData = new byte[1024];
 					//Receives one package from the client
 					DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
 					serverSocket.receive(receivedPacket);

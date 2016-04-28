@@ -16,6 +16,30 @@ class UDPClient{
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
+		byte[] sendData = new byte[1024];
+		byte[] receiveData = new byte[1024];
+		
+		String clientSYN = "SYN";
+		String clientACK = "ACK";
+		
+		
+			
+		sendData = clientSYN.getBytes();
+		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,           IPAddress, 9876);
+		clientSocket.send(sendPacket);
+		System.out.println("SENT TO SERVER: "+clientSYN);
+		
+		DatagramPacket receivePacket = new DatagramPacket(receiveData,           receiveData.length);
+		clientSocket.receive(receivePacket);
+		String serverSYNACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
+		System.out.println("RECEIVED FROM SERVER: " + serverSYNACK);
+		
+		
+		
+		sendData = clientACK.getBytes();
+		sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+		clientSocket.send(sendPacket);
+		System.out.println("SENT TO SERVER: "+clientACK);
 		
 		
 		byte[] sendDataServer = new byte[1024];
@@ -43,13 +67,13 @@ class UDPClient{
 				
 				//Re-writes the messages into a byte arraylist
 				for(int i = 0; i < packets.size(); i++){		
-					byte[] sendData = new byte[1024];
+					sendData = new byte[1024];
 					barray.add(sendData = packets.get(i).getBytes());
 				}
 
 				//Creates packages of the bytes and sends them to the receiver
 				for(int i = 0; i < barray.size(); i++){
-					DatagramPacket sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, 9876);
+					sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, 9876);
 					System.out.println("TO SERVER: " + packets.get(i));
 					clientSocket.send(sendPacket);	
 				}
