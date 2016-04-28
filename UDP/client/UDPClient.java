@@ -10,73 +10,92 @@ import cutter.UDPException;
 class UDPClient{
 	public static void main(String args[]) throws Exception{
 
+		//The method for cutting data into packages
 		Cutter cutter = new Cutter(1024, 12);
-		ArrayList<String> packets = new ArrayList<String>();
 
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
+		
 		ArrayList<byte[]> barray = new ArrayList<byte[]>();
 		ArrayList<String> received = new ArrayList<String>();
+		ArrayList<String> packets = new ArrayList<String>();
 
 		byte[] receivedData = new byte[1024];
 		byte[] sendDataServer = new byte[1024];
+		
 		String input;
 		String reciept;
 
+		//Creates a last package of bytes, marking to the receiver that this is the last package. 
 		String last = "last";
 		byte[] lastPack = new byte[1024];
 		lastPack = last.getBytes();
 
 		while(true){
 
+			//Input from user
 			String sentence = inFromUser.readLine();
 
 			try{
+				//Cut the message into appropriate sized dataamounts
 				packets = cutter.messageCutting(sentence);
-				for(int i = 0; i < packets.size(); i++){
-
+				
+				//Re-writes the messages into a byte arraylist
+				for(int i = 0; i < packets.size(); i++){		
 					byte[] sendData = new byte[1024];
 					barray.add(sendData = packets.get(i).getBytes());
-
 				}
 
-
-				//SENPAI NOTICE ME
+				//Creates packages of the bytes and sends them to the receiver
 				for(int i = 0; i < barray.size(); i++){
 					DatagramPacket sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, 9876);
 					clientSocket.send(sendPacket);	
 				}
-				System.out.println("Test");
+				
+				//Sends the last package
 				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, 9876);
 				clientSocket.send(lastPacket);
 
-				while(true){
-					//Receives a motherfucking package from a shitty motherfucker
+				//Receives packages from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
+				for(int i = 0; i < packets.size(); i++){
+					//Receives one package from the server
 					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
 					clientSocket.receive(receivedPacket);
 
-					//Makes that fucking package into a string... bitch...
+					//Converts the package into a string
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 					System.out.println("RECEIVED: " + input);
 					received.add(input);
+					
+				}	
+				
+				while(true){
+					//Receives one package from the server
+					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
+					clientSocket.receive(receivedPacket);
 
-					//Get the adress of that motherfucker sending it to ya. He ain't snitching. 
+					//Converts the package into a string
+					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
+					System.out.println("RECEIVED: " + input);
+					received.add(input);
+					
+					//Gets the address of sender
 					InetAddress IPAddressServer = receivedPacket.getAddress();
 					int port = receivedPacket.getPort();			
 
-					//Sends the receipt to the motherfucker. He should know you mean business...
+					//Receipt
 					reciept = "Your package was recieved: " + input;
 					sendDataServer = reciept.getBytes();
 					DatagramPacket sendreciept = new DatagramPacket(sendDataServer, sendDataServer.length, IPAddressServer, port);
 					clientSocket.send(sendreciept);
 
-					System.out.println(input);
+					//Checks if it is receiving the last package
 					if(input.equals("last")){
 						break;
 					}
 				}	
-
+				
 				received.remove(received.size()-1);
 
 				String completeMessage = "";
@@ -91,7 +110,5 @@ class UDPClient{
 			}
 
 		}
-
-
 	}
 }
