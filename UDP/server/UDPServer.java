@@ -80,7 +80,6 @@ class UDPServer{
 					output = fruit.getFruit(id-1);
 				}catch(Exception e){
 					output = "You need to enter a valid whole number(Between 1-11)";
-					e.printStackTrace();
 				}
 
 				packets = cutter.messageCutting(output);

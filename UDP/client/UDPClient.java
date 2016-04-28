@@ -50,8 +50,6 @@ class UDPClient{
 				//Creates packages of the bytes and sends them to the receiver
 				for(int i = 0; i < barray.size(); i++){
 					DatagramPacket sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, 9876);
-					System.out.println("i: "+ i);
-					System.out.println("packets lengt: "+packets.size());
 					System.out.println("TO SERVER: " + packets.get(i));
 					clientSocket.send(sendPacket);	
 				}
