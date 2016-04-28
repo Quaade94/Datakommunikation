@@ -35,6 +35,7 @@ class UDPServer{
 
 			while(true){
 				//Receives a motherfucking package from a shitty motherfucker
+				byte[] receiveData = new byte[1024];
 				DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
 				serverSocket.receive(receivedPacket);
 
@@ -46,8 +47,7 @@ class UDPServer{
 				//Get the adress of that motherfucker sending it to ya. He ain't snitching. 
 				IPAddress = receivedPacket.getAddress();
 				port = receivedPacket.getPort();			
-
-				System.out.println(input);
+				
 				if(input.equals("last")){
 					break;
 				}
@@ -68,7 +68,6 @@ class UDPServer{
 
 			}else{		
 
-				System.out.println(completeMessage);
 				try{
 					id = Integer.parseInt(completeMessage.substring(0));
 					output = fruit.getFruit(id);
@@ -83,7 +82,6 @@ class UDPServer{
 				}
 
 				//SENPAI NOTICE ME
-				//TODO fix
 					for(int i = 0; i < barray.size(); i++){
 						DatagramPacket sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
 						serverSocket.send(sendPacket);	
@@ -92,15 +90,16 @@ class UDPServer{
 				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
 				serverSocket.send(lastPacket);
 				
-				for(int i = 0; i < packets.size(); i++){
+				//Receives ack(s) from the fruit
+				for(int i = 0; i < packets.size()+1; i++){
+					byte[] receiveData = new byte[1024];
 					//Receives one package from the client
 					DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
 					serverSocket.receive(receivedPacket);
 					
 					//Converts the package into a string
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-					System.out.println("RECEIVED: " + input);
-										
+					System.out.println("RECEIVED: " + input);										
 				}	
 			}
 		}

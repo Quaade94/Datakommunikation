@@ -59,7 +59,7 @@ class UDPClient{
 
 			
 				//Receives packages (in this case the acks) from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
-				for(int i = 0; i < packets.size(); i++){
+				for(int i = 0; i < packets.size()+1; i++){
 					//Receives one package from the server
 					byte[] receivedData = new byte[1024];
 					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
