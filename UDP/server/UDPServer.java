@@ -29,6 +29,9 @@ class UDPServer{
 		String serverSYNACK ="SYN+ACK";
 		
 		
+		
+		
+		//Three way handshake
 		DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 		serverSocket.receive(receivePacket);		
 		String clientSYN = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
@@ -46,6 +49,10 @@ class UDPServer{
 		String clientACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
 		System.out.println("RECEIVED: "+clientACK);
 
+		
+		
+		
+		
 		String last = "last";
 		byte[] lastPack = new byte[1024];
 		lastPack = last.getBytes();

@@ -13,6 +13,8 @@ class UDPClient{
 		//The method for cutting data into packages
 		Cutter cutter = new Cutter(1024, 12);
 
+		
+		//Three way handshake
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
@@ -21,9 +23,7 @@ class UDPClient{
 		
 		String clientSYN = "SYN";
 		String clientACK = "ACK";
-		
-		
-			
+					
 		sendData = clientSYN.getBytes();
 		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,           IPAddress, 9876);
 		clientSocket.send(sendPacket);
@@ -34,13 +34,13 @@ class UDPClient{
 		String serverSYNACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
 		System.out.println("RECEIVED FROM SERVER: " + serverSYNACK);
 		
-		
-		
 		sendData = clientACK.getBytes();
 		sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
 		clientSocket.send(sendPacket);
 		System.out.println("SENT TO SERVER: "+clientACK);
 		
+		
+		//Below is the acutal program
 		
 		byte[] sendDataServer = new byte[1024];
 		
