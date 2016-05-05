@@ -4,23 +4,21 @@ import java.net.DatagramPacket;
 import java.util.ArrayList;
 
 public class ED_Coder {
-	
+
 	private int encodeIndex;
 	private static String input;
 	
-	private ArrayList<String> messeges = new ArrayList<String>();
-	private ArrayList<Boolean> isThere = new ArrayList<Boolean>();
-	@SuppressWarnings("rawtypes")
-	private ArrayList<ArrayList> reElement = new ArrayList<ArrayList>();
+	// Test array for testing if the strings are not in sync
+	private int[] tamperdNumbers = {5,0,2,3,4,1};
+	private boolean tamperd = false;
 
-	
+	private ArrayList<String> messeges = new ArrayList<String>();
+
 	public ED_Coder(){
 		encodeIndex = 1;
 		messeges.clear();
-		isThere.clear();
-		reElement.clear();
 	}
-		
+
 	/**
 	 * resets the index counter back to 1
 	 */
@@ -30,9 +28,11 @@ public class ED_Coder {
 	/**
 	 * resets the message and isThere arrays, do this when the final message has been constructed
 	 */
-	public void resetArrays(){
+	public void resetArray(){
 		messeges.clear();
-		isThere.clear();
+	}
+	public ArrayList<String> getMessageArray(){
+		return messeges;
 	}
 	/**
 	 * Adds a number of zero's to the start of the input string
@@ -41,16 +41,25 @@ public class ED_Coder {
 	 * @return The message with index
 	 */
 	public String encode(String message){
-		
+
+		int targetLenght = message.length() + 8;
+
 		if (encodeIndex > 99999999) encodeIndex = 1;
-		
+
 		String encodeIndexString = String.valueOf(encodeIndex);
 
-		while (encodeIndexString.length() < 8) {
-			encodeIndexString = "0" + encodeIndexString;
+		if (tamperd){
+			encodeIndexString = String.valueOf(tamperdNumbers[encodeIndex - 1]);
 		}
-		
+
+		message = encodeIndexString + message;
+
+		while (message.length() < targetLenght) {
+			message = "0" + message;
+		}
+
 		encodeIndex++;
+		System.out.println(message);
 		return message;
 	}
 	/**
@@ -61,38 +70,85 @@ public class ED_Coder {
 	 * @throws Exception  ¯\_(ツ)_/¯
 	 */
 	public void decode(DatagramPacket receivedPacket) throws Exception {
-		
+
 		input = new String(receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-		
+
 		int elementNumberInt = 1;
-		
+
 		for (int i = 0 ; i < 8 ; i++){
-			
-			String substring = input.substring(i, i);
-			
+
+			String substring = input.substring(i, i+1);
+
 			if(!substring.equals("0")){
 				elementNumberInt = i;
+				break;
 			}
 		}
-		
-		String message = input.substring(9, input.length());
-		
-		messeges.add(elementNumberInt, message);
-		isThere.add(elementNumberInt, true);
-		
+
+		int messageNumber = Integer.valueOf(input.substring(elementNumberInt, 8));
+
+		String finalSubstring = input.substring(8, input.length());
+
+		messeges = this.addIntoArray(messeges, finalSubstring, messageNumber);
+
 	}
 	/**
 	 * Gets the messeges and is there Arrays, in a single array
 	 * @return An array with messeges array and isThere array
 	 */
-	@SuppressWarnings("rawtypes")
-	public ArrayList<ArrayList> getDecodeMessage(){
+	public void decodeString(String message) throws Exception {
+
+		int elementNumberInt = 1;
+
+		for (int i = 0 ; i < 8 ; i++){
+
+			String substring = message.substring(i, i+1);
+
+			if(!substring.equals("0")){
+				elementNumberInt = i;
+				break;
+			}
+		}
+
+		int messageNumber = Integer.valueOf(message.substring(elementNumberInt, 8));
+
+		String finalSubstring = message.substring(8, message.length());
+
+		messeges = this.addIntoArray(messeges, finalSubstring, messageNumber);
+	}
+
+	private ArrayList<String> addIntoArray(ArrayList<String> list, String message, int placement){
 		
-		reElement.clear();
-		
-		reElement.add(messeges);
-		reElement.add(isThere);
-		
-		return reElement;
+		if (list.isEmpty()){
+			list.add(0, null);
+		}
+		for (int i = 0 ; i <= placement ; i++){
+
+			if (i != placement){
+				if (i > list.size() - 1){
+					list.add(null);
+				}
+				if (list.get(i) != null && !(list.get(i) instanceof String)){
+					String tempString = null;
+					
+					if (list.get(i)instanceof String && list.get(i) != null){
+					tempString = list.get(i);
+					}
+					list.set(i, null);
+					list.set(i, tempString);	
+				}
+			}
+			else {
+				if (list.size() != placement){
+					if (list.get(placement) == null){
+						list.set(placement, message);
+					}					
+				}
+				else{
+				list.add(i, message);
+				}
+			}
+		}
+		return list;
 	}
 }

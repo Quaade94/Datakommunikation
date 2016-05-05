@@ -37,7 +37,7 @@ public class Cutter {
 		int amountOfPackets = message.length()/clusterSize;
 
 		//If the size of the message is too large, this will trigger
-		if (amountOfPackets >= maxAmountOfPackets){
+		if (amountOfPackets >= maxAmountOfPackets && maxAmountOfPackets != 0){
 			System.out.println("String is " + remainder + " bytes too large");
 			throw new UDPException();
 		}
