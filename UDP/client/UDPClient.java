@@ -18,6 +18,7 @@ class UDPClient{
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
+		int port = 9876;
 		byte[] sendData = new byte[1024];
 		byte[] receiveData = new byte[1024];
 		
@@ -25,7 +26,7 @@ class UDPClient{
 		String clientACK = "ACK";
 					
 		sendData = clientSYN.getBytes();
-		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,           IPAddress, 9876);
+		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,           IPAddress, port);
 		clientSocket.send(sendPacket);
 		System.out.println("SENT TO SERVER: "+clientSYN);
 		
@@ -35,12 +36,32 @@ class UDPClient{
 		System.out.println("RECEIVED FROM SERVER: " + serverSYNACK);
 		
 		sendData = clientACK.getBytes();
-		sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+		sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 		clientSocket.send(sendPacket);
 		System.out.println("SENT TO SERVER: "+clientACK);
 		
+		//Testing Ping 10 times
+		//Sends a request to the server for and answer and listens, theirfor there is no need for code on the server side.
+		for(int i= 0;i<10;i++){
+			long time1 = System.currentTimeMillis();
+			String message = "Ping "+i+": "+time1;
+			DatagramPacket request = new DatagramPacket(message.getBytes(),message.length(),IPAddress,port);
+			clientSocket.send(request);
+			DatagramPacket reply = new DatagramPacket(new byte[1024],1024);
+			
+			//timeout for ping (1 second)
+			clientSocket.setSoTimeout(1000);
+			try{
+				clientSocket.receive(reply);
+			}catch(IOException e){
+				
+			}
+			printData(request,time1);
+			//1 second delay for each ping
+			Thread.sleep(1000);
+		}
 		
-		//Below is the acutal program
+		//Below is the actual program
 		
 		byte[] sendDataServer = new byte[1024];
 		
@@ -73,13 +94,13 @@ class UDPClient{
 
 				//Creates packages of the bytes and sends them to the receiver
 				for(int i = 0; i < barray.size(); i++){
-					sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, 9876);
+					sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
 					System.out.println("TO SERVER: " + packets.get(i));
 					clientSocket.send(sendPacket);	
 				}
 				
 				//Sends the last package
-				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, 9876);
+				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
 				clientSocket.send(lastPacket);
 				System.out.println("TO SERVER: last");
 			
@@ -113,7 +134,7 @@ class UDPClient{
 					
 					//Gets the address of sender
 					InetAddress IPAddressServer = receivedPacket.getAddress();
-					int port = receivedPacket.getPort();			
+					port = receivedPacket.getPort();			
 
 					//Receipt
 					reciept = "Your package was recieved: " + input;
@@ -141,5 +162,22 @@ class UDPClient{
 			}
 
 		}
+	}
+	//Recieves, works out, and prints the ping
+	private static void printData(DatagramPacket request,long time1)throws Exception{
+		byte[] buf = request.getData();
+		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+		InputStreamReader isr = new InputStreamReader(bais);
+		BufferedReader br = new BufferedReader(isr);
+		String line = br.readLine();
+		long time2 = -1;
+		try{
+			time2  = Long.parseLong(line.substring(8, line.length()));
+		}catch(NumberFormatException e){
+			System.out.println("Failed to convert String to Long");
+			System.out.println("Ping failed!");
+		}
+		long time = time2-time1;
+		System.out.println("Recieved from " + request.getAddress().getHostAddress()+": " + line.substring(0,8)+time+" ms");
 	}
 }
