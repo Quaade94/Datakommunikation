@@ -65,7 +65,10 @@ class UDPClient{
 
 		//Testing Ping 10 times
 		//Sends a request to the server for and answer and listens, theirfor there is no need for code on the server side.
-		for(int i= 0;i<10;i++){
+		long[] ping = new long[10];
+		long average = 0;
+		long rtt = 0;
+		for(int i= 0; i < 10; i++){
 			long time1 = System.currentTimeMillis();
 			String message = "Ping "+i+": "+time1;
 			DatagramPacket request = new DatagramPacket(message.getBytes(),message.length(),IPAddress,port);
@@ -79,11 +82,14 @@ class UDPClient{
 			}catch(IOException e){
 
 			}
-			printData(request,time1);
+			ping[i] = printData(request,time1);
 			//1 second delay for each ping
 			Thread.sleep(1000);
 		}
-
+		for(int i= 0; i < ping.length; i++){
+			average = average + ping[i];
+		}
+		rtt = (average / ping.length) + 5;
 		//Below is the actual program
 
 		byte[] sendDataServer = new byte[1024];
@@ -120,6 +126,8 @@ class UDPClient{
 					sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
 					System.out.println("TO SERVER: " + packets.get(i));
 					clientSocket.send(sendPacket);	
+					//Timer starter her
+					
 				}
 
 				//Sends the last package
@@ -136,7 +144,8 @@ class UDPClient{
 
 					//Converts the package into a string
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-					System.out.println("FROM SERVER: " + input);			
+					System.out.println("FROM SERVER: " + input);
+					//Tjek om tiden er gået her
 				}	
 
 				if (sentence.equals("close")){
@@ -187,7 +196,7 @@ class UDPClient{
 		}
 	}
 	//Recieves, works out, and prints the ping
-	private static void printData(DatagramPacket request,long time1)throws Exception{
+	private static long printData(DatagramPacket request,long time1)throws Exception{
 		byte[] buf = request.getData();
 		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 		InputStreamReader isr = new InputStreamReader(bais);
@@ -202,5 +211,7 @@ class UDPClient{
 		}
 		long time = time2-time1;
 		System.out.println("Recieved from " + request.getAddress().getHostAddress()+": " + line.substring(0,8)+time+" ms");
+		
+		return time;
 	}
 }
