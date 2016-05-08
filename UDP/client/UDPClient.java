@@ -13,7 +13,7 @@ class UDPClient{
 		//The method for cutting data into packages
 		Cutter cutter = new Cutter(1024, 12);
 
-		
+
 		//Three way handshake
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
@@ -21,25 +21,48 @@ class UDPClient{
 		int port = 9876;
 		byte[] sendData = new byte[1024];
 		byte[] receiveData = new byte[1024];
-		
+
 		String clientSYN = "SYN";
 		String clientACK = "ACK";
-					
+
+
 		sendData = clientSYN.getBytes();
-		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,           IPAddress, port);
-		clientSocket.send(sendPacket);
-		System.out.println("SENT TO SERVER: "+clientSYN);
-		
-		DatagramPacket receivePacket = new DatagramPacket(receiveData,           receiveData.length);
-		clientSocket.receive(receivePacket);
-		String serverSYNACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
-		System.out.println("RECEIVED FROM SERVER: " + serverSYNACK);
-		
-		sendData = clientACK.getBytes();
-		sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-		clientSocket.send(sendPacket);
-		System.out.println("SENT TO SERVER: "+clientACK);
-		
+		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+
+
+		for(int i =0; i<6;i++){
+			DatagramPacket sendPacket1 = new DatagramPacket(sendData, sendData.length, IPAddress, port);	
+
+			clientSocket.send(sendPacket1);
+			System.out.println("SENT TO SERVER: "+clientSYN);
+
+			clientSocket.setSoTimeout(1000);
+
+			DatagramPacket receivePacket = new DatagramPacket(receiveData,           receiveData.length);
+			try{
+				clientSocket.receive(receivePacket);
+			}catch(IOException e){
+
+			}
+			String serverSYNACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
+
+			if(serverSYNACK.equals("SYN+ACK")){
+				System.out.println("RECEIVED FROM SERVER: " + serverSYNACK);
+				sendData = clientACK.getBytes();
+				DatagramPacket sendPacket2 = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+				clientSocket.send(sendPacket2);
+				System.out.println("SENT TO SERVER: "+clientACK);
+				break;
+			}
+			if(i == 5){
+				System.out.print("Connection timed out");
+				return;
+			}
+		}
+
+
+
+
 		//Testing Ping 10 times
 		//Sends a request to the server for and answer and listens, theirfor there is no need for code on the server side.
 		for(int i= 0;i<10;i++){
@@ -48,23 +71,23 @@ class UDPClient{
 			DatagramPacket request = new DatagramPacket(message.getBytes(),message.length(),IPAddress,port);
 			clientSocket.send(request);
 			DatagramPacket reply = new DatagramPacket(new byte[1024],1024);
-			
+
 			//timeout for ping (1 second)
 			clientSocket.setSoTimeout(1000);
 			try{
 				clientSocket.receive(reply);
 			}catch(IOException e){
-				
+
 			}
 			printData(request,time1);
 			//1 second delay for each ping
 			Thread.sleep(1000);
 		}
-		
+
 		//Below is the actual program
-		
+
 		byte[] sendDataServer = new byte[1024];
-		
+
 		String input;
 		String reciept;
 
@@ -78,14 +101,14 @@ class UDPClient{
 			ArrayList<String> packets = new ArrayList<String>();
 			ArrayList<byte[]> barray = new ArrayList<byte[]>();
 			ArrayList<String> received = new ArrayList<String>();
-			
+
 			//Input from user
 			String sentence = inFromUser.readLine();
 
 			try{
 				//Cut the message into appropriate sized dataamounts
 				packets = cutter.messageCutting(sentence);
-				
+
 				//Re-writes the messages into a byte arraylist
 				for(int i = 0; i < packets.size(); i++){		
 					sendData = new byte[1024];
@@ -98,12 +121,12 @@ class UDPClient{
 					System.out.println("TO SERVER: " + packets.get(i));
 					clientSocket.send(sendPacket);	
 				}
-				
+
 				//Sends the last package
 				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
 				clientSocket.send(lastPacket);
 				System.out.println("TO SERVER: last");
-			
+
 				//Receives packages (in this case the acks) from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
 				for(int i = 0; i < packets.size()+1; i++){
 					//Receives one package from the server
@@ -115,13 +138,13 @@ class UDPClient{
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 					System.out.println("FROM SERVER: " + input);			
 				}	
-					
+
 				if (sentence.equals("close")){
 					clientSocket.close();
 					System.out.println("Shutting Down");
 					System.exit(0);
 				}
-				
+
 				while(true){
 					//Receives one package from the server (in this case the fruit response)
 					byte[] receivedData = new byte[1024];
@@ -131,7 +154,7 @@ class UDPClient{
 					//Converts the package into a string
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 					received.add(input);
-					
+
 					//Gets the address of sender
 					InetAddress IPAddressServer = receivedPacket.getAddress();
 					port = receivedPacket.getPort();			
@@ -147,7 +170,7 @@ class UDPClient{
 						break;
 					}
 				}	
-				
+
 				received.remove(received.size()-1);
 
 				String completeMessage = "";
