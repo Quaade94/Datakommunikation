@@ -71,7 +71,7 @@ class UDPServer{
 
 		//RECIEVES DATA
 
-		//		ArrayList<String> received = new ArrayList<String>();
+		ArrayList<String> received = new ArrayList<String>();
 		while(true){
 
 			//Receives packages from the client, until package containing the string "last" is received
@@ -80,6 +80,7 @@ class UDPServer{
 			DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
 			serverSocket.receive(receivedPacket);
 
+			
 			//Gets the adress of the sender
 			IPAddress = receivedPacket.getAddress();
 			port = receivedPacket.getPort();			
@@ -88,7 +89,8 @@ class UDPServer{
 			coder.decode(receivedPacket);
 
 			//sends reciepts for recieved packets
-			reciept = input.substring(0,8);
+			String forTheReciept = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
+			reciept = forTheReciept.substring(0,8);
 			sendData = reciept.getBytes();
 			DatagramPacket sendreciept = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 			serverSocket.send(sendreciept);
@@ -158,7 +160,7 @@ class UDPServer{
 					sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
 					System.out.println("TO CLIENT: " + packets.get(i));
 					serverSocket.send(sendPacket);	
-					//Timer starter her
+					//TODO: Timer starts here
 
 				}
 
@@ -172,12 +174,12 @@ class UDPServer{
 				serverSocket.send(lastPacket);
 				System.out.println("TO CLIENT: last");
 
-				String input;
-				String reciept;
 
 			}catch(UDPException e){
 				e.myprint();
 
+				String input;
+				
 				//puts packet numbers in an array
 				ArrayList<String> SPNo = new ArrayList<String>(); //CPNo = Client Package Number
 				for(int i=0;i<packets.size();i++){

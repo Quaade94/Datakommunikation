@@ -11,7 +11,8 @@ import cutter.UDPException;
 class UDPClient{
 
 	private static String completeMessage = "";
-
+	private static String input;
+	private static String reciept;
 
 	public static void main(String args[]) throws Exception{
 
@@ -125,7 +126,7 @@ class UDPClient{
 				sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
 				System.out.println("TO SERVER: " + packets.get(i));
 				clientSocket.send(sendPacket);	
-				//Timer starter her
+				//TODO: Timer starts here
 
 			}
 
@@ -140,9 +141,6 @@ class UDPClient{
 			System.out.println("TO SERVER: last");
 
 			//RESEND
-
-			String input;
-			String reciept;
 
 			//puts packet numbers in an array
 			ArrayList<String> CPNo = new ArrayList<String>(); //CPNo = Client Package Number
@@ -216,10 +214,6 @@ class UDPClient{
 					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
 					clientSocket.receive(receivedPacket);
 
-					//Converts the package into a string
-					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-					received.add(input);
-
 					//Gets the address of sender
 					InetAddress IPAddressServer = receivedPacket.getAddress();
 					port = receivedPacket.getPort();			
@@ -228,7 +222,8 @@ class UDPClient{
 					coder.decode(receivedPacket);
 
 					//Receipt
-					reciept = input.substring(0,8);
+					String forTheReceiept = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
+					reciept = forTheReceiept.substring(0,8);
 					sendDataServer = reciept.getBytes();
 					DatagramPacket sendreciept = new DatagramPacket(sendDataServer, sendDataServer.length, IPAddressServer, port);
 					clientSocket.send(sendreciept);
