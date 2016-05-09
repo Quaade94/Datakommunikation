@@ -17,9 +17,11 @@ public class FruitData {
 		this.fruitArray.add("Brombær ");
 		this.fruitArray.add("Citron ");
 		this.fruitArray.add("Honningmelon ");
+		
 	}
 
 	public String getFruit(int ID){
 		return fruitArray.get(ID);
+		
 	}
 }
