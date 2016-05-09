@@ -6,6 +6,7 @@ import java.util.InputMismatchException;
 import java.io.*;
 
 import cutter.Cutter;
+import cutter.ED_Coder;
 
 class UDPServer{
 
@@ -23,6 +24,7 @@ class UDPServer{
 	public static void main(String args[]) throws Exception{
 		FruitData fruit = new FruitData();
 		Cutter cutter = new Cutter(1024, 12);
+		ED_Coder coder = new ED_Coder();
 		serverSocket = new DatagramSocket(9876);
 
 		byte[] receiveData = new byte[1024];
@@ -64,17 +66,24 @@ class UDPServer{
 			}
 		}
 		serverSocket.setSoTimeout(0);
-
-
-
-
-
-
-
+		
 		String last = "last";
 		byte[] lastPack = new byte[1024];
 		lastPack = last.getBytes();
 
+		
+		
+		
+		
+		
+		//RECIEVES DATA
+		
+		
+		
+		
+		
+		
+		
 		while(true){
 			ArrayList<String> received = new ArrayList<String>();
 			ArrayList<byte[]> barray = new ArrayList<byte[]>();
@@ -91,17 +100,24 @@ class UDPServer{
 				input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 				System.out.println("FROM CLIENT: " + input);
 				received.add(input);
+				
+				//decodes the string
+				for(int i = 0; i<packets.size();i++){
+					packets.set(i, coder.encode(packets.get(i)));
+				}
 
 				//Gets the adress of the sender
 				IPAddress = receivedPacket.getAddress();
 				port = receivedPacket.getPort();			
 
-				reciept = "Your package was recieved: " + input;
+				//sends reciepts
+				reciept =input.substring(0,8);
 				sendData = reciept.getBytes();
 				DatagramPacket sendreciept = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 				serverSocket.send(sendreciept);
 
 				if(input.equals("last")){
+					//TODO MUST NOT BREAK BUT SEE IF ALL PACKETS ARE RECIEVED
 					break;
 				}
 			}	
