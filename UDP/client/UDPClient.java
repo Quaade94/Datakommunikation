@@ -5,13 +5,15 @@ import java.net.*;
 import java.util.ArrayList;
 
 import cutter.Cutter;
+import cutter.ED_Coder;
 import cutter.UDPException;
 
 class UDPClient{
 	public static void main(String args[]) throws Exception{
 
 		//The method for cutting data into packages
-		Cutter cutter = new Cutter(1024, 12);
+		Cutter cutter = new Cutter(1016, 12);
+		ED_Coder coder= new ED_Coder();
 
 
 		//Three way handshake
@@ -59,14 +61,11 @@ class UDPClient{
 				return;
 			}
 		}
-
-
-
-
+		
 		//Testing Ping 10 times
 		//Sends a request to the server for and answer and listens, theirfor there is no need for code on the server side.
 		long[] ping = new long[10];
-		long average = 0;
+		long sum = 0;
 		long rtt = 0;
 		for(int i= 0; i < 10; i++){
 			long time1 = System.currentTimeMillis();
@@ -87,11 +86,11 @@ class UDPClient{
 			Thread.sleep(1000);
 		}
 		for(int i= 0; i < ping.length; i++){
-			average = average + ping[i];
+			sum = sum + ping[i];
 		}
-		rtt = (average / ping.length) + 5;
+		rtt = (sum / ping.length) + 5;
+		
 		//Below is the actual program
-
 		byte[] sendDataServer = new byte[1024];
 
 		String input;
@@ -112,8 +111,13 @@ class UDPClient{
 			String sentence = inFromUser.readLine();
 
 			try{
-				//Cut the message into appropriate sized dataamounts
+				//Cut the message into appropriate sized data amounts
 				packets = cutter.messageCutting(sentence);
+				
+				//Insert number of packet to the front of each packet e.g. 00000123
+				for(int i = 0; i<packets.size();i++){
+					packets.set(i, packets.get(i));
+				}
 
 				//Re-writes the messages into a byte arraylist
 				for(int i = 0; i < packets.size(); i++){		
@@ -145,7 +149,7 @@ class UDPClient{
 					//Converts the package into a string
 					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 					System.out.println("FROM SERVER: " + input);
-					//Tjek om tiden er gået her
+					//Tjek om tiden er gï¿½et her
 				}	
 
 				if (sentence.equals("close")){
