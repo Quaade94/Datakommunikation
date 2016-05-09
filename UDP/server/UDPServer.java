@@ -7,15 +7,18 @@ import java.io.*;
 
 import cutter.Cutter;
 import cutter.ED_Coder;
+import cutter.UDPException;
 
 class UDPServer{
 
-	private static String output;
+	private static String frugt;
+	private static String frugter;
 	private static String input;
-	private static int id;
+	private static int id = 0;
 	private static String reciept;
 	private static InetAddress IPAddress;
 	private static int port;
+	private static String completeMessage = "";
 
 
 
@@ -66,115 +69,236 @@ class UDPServer{
 			}
 		}
 		serverSocket.setSoTimeout(0);
-		
-		String last = "last";
-		byte[] lastPack = new byte[1024];
-		lastPack = last.getBytes();
 
-		
-		
-		
-		
-		
+
+
+
+
+
+
 		//RECIEVES DATA
-		
-		
-		
-		
-		
-		
-		
+
+
+
+
+
+
+
+
+
+		//		ArrayList<String> received = new ArrayList<String>();
 		while(true){
-			ArrayList<String> received = new ArrayList<String>();
+			//Receives packages from the client, until package containing the string "last" is received
+			receiveData = new byte[1024];
+			sendData = new byte[1024];
+			DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
+			serverSocket.receive(receivedPacket);
+
+			//Gets the adress of the sender
+			IPAddress = receivedPacket.getAddress();
+			port = receivedPacket.getPort();			
+
+			//decodes and saves the data to an array
+			coder.decode(receivedPacket);
+
+			//sends reciepts for recieved packets
+			reciept = input.substring(0,8);
+			sendData = reciept.getBytes();
+			DatagramPacket sendreciept = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+			serverSocket.send(sendreciept);
+
+			if(!(coder.getMessageArray().contains(null)) && (coder.getMessageArray().get(coder.getMessageArray().size()).equals("last"))){
+				//TODO Timeout 
+				//last packet is removed because it is just a notice
+				coder.getMessageArray().remove(coder.getMessageArray().get(coder.getMessageArray().size()));
+				//creates the long String
+				for(int i = 0; i < coder.getMessageArray().size(); i++){
+					completeMessage = completeMessage + coder.getMessageArray().get(i);
+				}
+				coder.resetArray();
+				break;
+			}
+		}
+		
+
+
+
+
+		//SENDS DATA
+
+
+
+
+
+
+		//if the message is "close" shutdown
+		if(completeMessage.equals("close")){
+			serverSocket.close();
+			System.out.println("Shutting down");
+			System.exit(0);
+
+		}else{		
+
+			try{
+
+				for(int i = 0; i<completeMessage.length();i++){
+					id = Integer.parseInt(completeMessage.substring(i,i+1));
+					frugter = frugter + fruit.getFruit(id-1);
+				}
+			}catch(Exception e){
+				//sends error message
+				frugt = "You need to enter a valid whole number(Between 1-9)";
+				sendData = new byte[1024];
+				sendData = frugt.getBytes();
+				sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+				System.out.println("TO CLIENT: " + sendData);
+				serverSocket.send(sendPacket);
+			}
+
+
+
 			ArrayList<byte[]> barray = new ArrayList<byte[]>();
 			ArrayList<String> packets = new ArrayList<String>();
 
 			while(true){
-				//Receives packages from the client, until package containing the string "last" is received
-				receiveData = new byte[1024];
-				sendData = new byte[1024];
-				DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
-				serverSocket.receive(receivedPacket);
+				//				ArrayList<String> received = new ArrayList<String>();
 
-				//Makes the package into a string
-				input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-				System.out.println("FROM CLIENT: " + input);
-				received.add(input);
-				
-				//decodes the string
-				for(int i = 0; i<packets.size();i++){
-					packets.set(i, coder.encode(packets.get(i)));
-				}
-
-				//Gets the adress of the sender
-				IPAddress = receivedPacket.getAddress();
-				port = receivedPacket.getPort();			
-
-				//sends reciepts
-				reciept =input.substring(0,8);
-				sendData = reciept.getBytes();
-				DatagramPacket sendreciept = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-				serverSocket.send(sendreciept);
-
-				if(input.equals("last")){
-					//TODO MUST NOT BREAK BUT SEE IF ALL PACKETS ARE RECIEVED
-					break;
-				}
-			}	
-
-			received.remove(received.size()-1);
-
-			String completeMessage = "";
-			for(int i = 0; i < received.size(); i++){
-				completeMessage = completeMessage + received.get(i);
-			}
-
-			//if the message is "close" shutdown
-			if(completeMessage.equals("close")){
-				serverSocket.close();
-				System.out.println("Shutting down");
-				System.exit(0);
-
-			}else{		
+				//Input from Frugt
+				String sentence = frugter;
 
 				try{
-					id = 0;
-					id = Integer.parseInt(completeMessage.substring(0));
-					output = fruit.getFruit(id-1);
-				}catch(Exception e){
-					output = "You need to enter a valid whole number(Between 1-11)";
+					//Cut the message into appropriate sized data amounts
+					packets = cutter.messageCutting(sentence);
+
+					//Insert number of packet to the front of each packet e.g. 00000123
+					for(int i = 0; i<packets.size();i++){
+						packets.set(i, coder.encode(packets.get(i)));
+					}
+
+					//Re-writes the messages into a byte arraylist
+					for(int i = 0; i < packets.size(); i++){		
+						sendData = new byte[1024];
+						barray.add(sendData = packets.get(i).getBytes());
+					}
+
+					//Creates packages of the bytes and sends them to the receiver
+					for(int i = 0; i < barray.size(); i++){
+						sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
+						System.out.println("TO CLIENT: " + packets.get(i));
+						serverSocket.send(sendPacket);	
+						//Timer starter her
+
+					}
+
+					//Creates a last package of bytes, marking to the receiver that this is the last package. 
+					String last = "last";
+					byte[] lastPack = new byte[1024];
+					lastPack = last.getBytes();
+
+					//Sends the last package
+					DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
+					serverSocket.send(lastPacket);
+					System.out.println("TO CLIENT: last");
+
+
+
+
+
+
+
+					//					String input;
+					//					String reciept;
+					//					
+					//					//puts packet numbers in an array
+					//					ArrayList<String> CPNo = new ArrayList<String>(); //CPNo = Client Package Number
+					//					for(int i=0;i<packets.size();i++){
+					//						CPNo.add(packets.get(i).substring(0, 8));
+					//					}
+
+
+					//				while(true){
+					//					for(int j = 0 ; j < CPNo.size() ; j++){
+					//
+					//						// recieves the reciept
+					//						byte[] receivedData = new byte[8];
+					//						DatagramPacket receivedReciept = new DatagramPacket(receivedData, receivedData.length);
+					//						ServerSocket.receive(receivedReciept);
+					//						input = new String( receivedReciept.getData(), receivedReciept.getOffset(), receivedReciept.getLength(), "UTF-8");
+					//						String SPNo = input; //SPNo = Server Package Number
+					//						//handles reciepts to see if all packages were recieved
+					//						for(int i = 0 ; i < CPNo.size() ; i++){
+					//							if(SPNo == CPNo.get(i)){
+					//								CPNo.remove(i);
+					//							}
+					//						}
+					//					}
+					//					if(CPNo.size()==0){
+					//						break;						
+					//					}else{
+					//						//for the missing packets:
+					//						for(int i = 0; i < CPNo.size(); i++){
+					//							//find the packet:
+					//							for (int k = 0 ; k<packets.size(); k++){
+					//								if(CPNo.get(i) == packets.get(k).substring(0, 8)){
+					//									//send the packet:
+					//									sendPacket = new DatagramPacket(barray.get(k), barray.get(k).length, IPAddress, port);
+					//									System.out.println("RESENT TO SERVER: " + packets.get(k));
+					//									ServerSocket.send(sendPacket);	
+					//									//Timer starter her
+					//								}
+					//							}
+					//						}
+					//					}
+					//				}
+					//				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+					//
+					//				packets = cutter.messageCutting(output);
+					//				for(int i = 0; i < packets.size(); i++){
+					//					sendData = new byte[1024];
+					//					barray.add(sendData = packets.get(i).getBytes());
+					//				}
+					//
+					//				//SENPAI NOTICE ME
+					//				for(int i = 0; i < barray.size(); i++){
+					//					sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
+					//					System.out.println("TO CLIENT: " + packets.get(i));
+					//					serverSocket.send(sendPacket);	
+					//				}
+					//
+					//				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
+					//				serverSocket.send(lastPacket);
+					//				System.out.println("TO CLIENT: last");
+
+					//Receives ack(s) from the fruit
+					//				for(int i = 0; i < packets.size()+1; i++){
+					//					receiveData = new byte[1024];
+					//					//Receives one package from the client
+					//					DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
+					//					serverSocket.receive(receivedPacket);
+					//
+					//					//Converts the package into a string
+					//					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
+					//					System.out.println("FROM CLIENT: " + input);										
+					//				}	
+				}catch(UDPException e){
+					e.myprint();
 				}
-
-				packets = cutter.messageCutting(output);
-				for(int i = 0; i < packets.size(); i++){
-					sendData = new byte[1024];
-					barray.add(sendData = packets.get(i).getBytes());
-				}
-
-				//SENPAI NOTICE ME
-				for(int i = 0; i < barray.size(); i++){
-					sendPacket = new DatagramPacket(barray.get(i), barray.get(i).length, IPAddress, port);
-					System.out.println("TO CLIENT: " + packets.get(i));
-					serverSocket.send(sendPacket);	
-				}
-
-				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
-				serverSocket.send(lastPacket);
-				System.out.println("TO CLIENT: last");
-
-				//Receives ack(s) from the fruit
-				for(int i = 0; i < packets.size()+1; i++){
-					receiveData = new byte[1024];
-					//Receives one package from the client
-					DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
-					serverSocket.receive(receivedPacket);
-
-					//Converts the package into a string
-					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-					System.out.println("FROM CLIENT: " + input);										
-				}	
 			}
 		}
-
 	}
 }

@@ -9,6 +9,10 @@ import cutter.ED_Coder;
 import cutter.UDPException;
 
 class UDPClient{
+	
+	private static String completeMessage = "";
+
+	
 	public static void main(String args[]) throws Exception{
 
 		//The method for cutting data into packages
@@ -62,6 +66,11 @@ class UDPClient{
 			}
 		}
 
+
+
+
+
+
 		//Testing Ping 10 times
 		//Sends a request to the server for and answer and listens, theirfor there is no need for code on the server side.
 		long[] ping = new long[10];
@@ -93,23 +102,19 @@ class UDPClient{
 		//Below is the actual program
 		byte[] sendDataServer = new byte[1024];
 
-		String input;
-		String reciept;
 
-		//Creates a last package of bytes, marking to the receiver that this is the last package. 
-		String last = "last";
-		byte[] lastPack = new byte[1024];
-		lastPack = last.getBytes();
-		
-		
-		
-		
-		
+
+
+
+
+
+
+
 		//SENDS DATA
-		
-		
-		
-		
+
+
+
+
 		while(true){
 
 			ArrayList<String> packets = new ArrayList<String>();
@@ -143,32 +148,39 @@ class UDPClient{
 
 				}
 
+				//Creates a last package of bytes, marking to the receiver that this is the last package. 
+				String last = "last";
+				byte[] lastPack = new byte[1024];
+				lastPack = last.getBytes();
+
 				//Sends the last package
 				DatagramPacket lastPacket = new DatagramPacket (lastPack, lastPack.length, IPAddress, port);
 				clientSocket.send(lastPacket);
 				System.out.println("TO SERVER: last");
 
-				
-				
-				
-				
-				
-				
+
+
+
+
+
+
 				//RESEND
-				
-				
-				
-				
-				
-				
-				
+
+
+
+
+
+
+				String input;
+				String reciept;
+
 				//puts packet numbers in an array
 				ArrayList<String> CPNo = new ArrayList<String>(); //CPNo = Client Package Number
 				for(int i=0;i<packets.size();i++){
 					CPNo.add(packets.get(i).substring(0, 8));
 				}
 				while(true){
-					for(int j = 0;j<CPNo.size();j++){
+					for(int j = 0 ; j < CPNo.size() ; j++){
 
 						// recieves the reciept
 						byte[] receivedData = new byte[8];
@@ -177,7 +189,7 @@ class UDPClient{
 						input = new String( receivedReciept.getData(), receivedReciept.getOffset(), receivedReciept.getLength(), "UTF-8");
 						String SPNo = input; //SPNo = Server Package Number
 						//handles reciepts to see if all packages were recieved
-						for(int i = 0;i<CPNo.size();i++){
+						for(int i = 0 ; i < CPNo.size() ; i++){
 							if(SPNo == CPNo.get(i)){
 								CPNo.remove(i);
 							}
@@ -189,7 +201,7 @@ class UDPClient{
 						//for the missing packets:
 						for(int i = 0; i < CPNo.size(); i++){
 							//find the packet:
-							for (int k = 0; k<packets.size();k++){
+							for (int k = 0 ; k<packets.size(); k++){
 								if(CPNo.get(i) == packets.get(k).substring(0, 8)){
 									//send the packet:
 									sendPacket = new DatagramPacket(barray.get(k), barray.get(k).length, IPAddress, port);
@@ -203,38 +215,38 @@ class UDPClient{
 				}
 
 
-				
-				
-				
-				
-				
+
+
+
+
+
 				//RECIEVE DATA
-				
-				
-				
-				
-				
-				
-				
-				
-				//Receives packages (in this case the acks) from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
-				for(int i = 0; i < packets.size()+1; i++){
-					//Receives one package from the server
-					byte[] receivedData = new byte[1024];
-					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
-					clientSocket.receive(receivedPacket);
 
-					//Converts the package into a string
-					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-					System.out.println("FROM SERVER: " + input);
-					//Tjek om tiden er g�et her
-				}	
 
-				if (sentence.equals("close")){
-					clientSocket.close();
-					System.out.println("Shutting Down");
-					System.exit(0);
-				}
+
+
+
+
+
+
+				//				//Receives packages (in this case the acks) from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
+				//				for(int i = 0; i < packets.size()+1; i++){
+				//					//Receives one package from the server
+				//					byte[] receivedData = new byte[1024];
+				//					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
+				//					clientSocket.receive(receivedPacket);
+				//
+				//					//Converts the package into a string
+				//					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
+				//					System.out.println("FROM SERVER: " + input);
+				//					//Tjek om tiden er g�et her
+				//				}	
+				//
+				//				if (sentence.equals("close")){
+				//					clientSocket.close();
+				//					System.out.println("Shutting Down");
+				//					System.exit(0);
+				//				}
 
 				while(true){
 
@@ -251,25 +263,28 @@ class UDPClient{
 					InetAddress IPAddressServer = receivedPacket.getAddress();
 					port = receivedPacket.getPort();			
 
+					//decodes and saves the data to an array
+					coder.decode(receivedPacket);
+
 					//Receipt
-					reciept = "Your package was recieved: " + input.substring(0,8);
+					reciept = input.substring(0,8);
 					sendDataServer = reciept.getBytes();
 					DatagramPacket sendreciept = new DatagramPacket(sendDataServer, sendDataServer.length, IPAddressServer, port);
 					clientSocket.send(sendreciept);
 
 					//Checks if it is receiving the last package
-					if(input.equals("last")){
+					if(!(coder.getMessageArray().contains(null)) && (coder.getMessageArray().get(coder.getMessageArray().size()).equals("last"))){
+						//TODO Timeout 
+						//last packet is removed because it is just a notice
+						coder.getMessageArray().remove(coder.getMessageArray().get(coder.getMessageArray().size()));
+						//creates the long String
+						for(int i = 0; i < coder.getMessageArray().size(); i++){
+							completeMessage = completeMessage + coder.getMessageArray().get(i);
+						}
+						coder.resetArray();
 						break;
-						//TODO MUST NOT BREAK BUT SEE IF ALL PACKETS ARE RECIEVED
 					}
 				}	
-
-				received.remove(received.size()-1);
-
-				String completeMessage = "";
-				for(int i = 0; i < received.size(); i++){
-					completeMessage = completeMessage + received.get(i);
-				}
 
 				System.out.println("FROM SERVER: "+ completeMessage);
 
@@ -279,8 +294,8 @@ class UDPClient{
 
 		}
 	}
-	
-	
+
+
 	//PING METHOD
 	//Recieves, works out, and prints the ping
 	private static long printData(DatagramPacket request,long time1)throws Exception{

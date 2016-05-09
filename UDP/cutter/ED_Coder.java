@@ -12,27 +12,28 @@ public class ED_Coder {
 	private int[] tamperdNumbers = {5,0,2,3,4,1};
 	private boolean tamperd = false;
 
-	private ArrayList<String> messeges = new ArrayList<String>();
+	private ArrayList<String> messages = new ArrayList<String>();
 
 	public ED_Coder(){
-		encodeIndex = 1;
-		messeges.clear();
+		encodeIndex = 0;
+		messages.clear();
 	}
 
 	/**
 	 * resets the index counter back to 1
 	 */
 	public void resetEncodeIndex(){
-		encodeIndex = 1;
+		encodeIndex = 0;
 	}
 	/**
 	 * resets the message and isThere arrays, do this when the final message has been constructed
 	 */
 	public void resetArray(){
-		messeges.clear();
+		messages.clear();
 	}
 	public ArrayList<String> getMessageArray(){
-		return messeges;
+	
+		return messages;
 	}
 	/**
 	 * Adds a number of zero's to the start of the input string
@@ -44,7 +45,7 @@ public class ED_Coder {
 
 		int targetLenght = message.length() + 8;
 
-		if (encodeIndex > 99999999) encodeIndex = 1;
+		if (encodeIndex > 99999999) encodeIndex = 0;
 
 		String encodeIndexString = String.valueOf(encodeIndex);
 
@@ -73,23 +74,11 @@ public class ED_Coder {
 
 		input = new String(receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 
-		int elementNumberInt = 1;
-
-		for (int i = 0 ; i < 8 ; i++){
-
-			String substring = input.substring(i, i+1);
-
-			if(!substring.equals("0")){
-				elementNumberInt = i;
-				break;
-			}
-		}
-
-		int messageNumber = Integer.valueOf(input.substring(elementNumberInt, 8));
-
+		int messageNumber = Integer.valueOf(input.substring(0, 8));
+		
 		String finalSubstring = input.substring(8, input.length());
 
-		messeges = this.addIntoArray(messeges, finalSubstring, messageNumber);
+		messages = this.addIntoArray(messages, finalSubstring, messageNumber);
 
 	}
 	/**
@@ -97,24 +86,12 @@ public class ED_Coder {
 	 * @return An array with messeges array and isThere array
 	 */
 	public void decodeString(String message) throws Exception {
-
-		int elementNumberInt = 1;
-
-		for (int i = 0 ; i < 8 ; i++){
-
-			String substring = message.substring(i, i+1);
-
-			if(!substring.equals("0")){
-				elementNumberInt = i;
-				break;
-			}
-		}
-
-		int messageNumber = Integer.valueOf(message.substring(elementNumberInt, 8));
-
+		
+		int messageNumber = Integer.valueOf(message.substring(0, 8));
+				
 		String finalSubstring = message.substring(8, message.length());
 
-		messeges = this.addIntoArray(messeges, finalSubstring, messageNumber);
+		messages = this.addIntoArray(messages, finalSubstring, messageNumber);
 	}
 
 	private ArrayList<String> addIntoArray(ArrayList<String> list, String message, int placement){
