@@ -60,7 +60,6 @@ public class ED_Coder {
 		}
 
 		encodeIndex++;
-		System.out.println(message);
 		return message;
 	}
 	/**
@@ -73,7 +72,6 @@ public class ED_Coder {
 	public void decode(DatagramPacket receivedPacket) throws Exception {
 
 		input = new String(receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-
 		int messageNumber = Integer.valueOf(input.substring(0, 8));
 		
 		String finalSubstring = input.substring(8, input.length());
