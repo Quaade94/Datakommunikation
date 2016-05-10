@@ -10,16 +10,24 @@ import cutter.UDPException;
 
 class UDPClient{
 
-	private static String completeMessage = "", input, reciept;
+	private static String completeMessage = "", input, reciept, clientSYN, clientACK, sentence, message, serverSYNACK, SPNo;
 	private static int port =  9876, tryAmount = 5;
 	private static ArrayList<Long> timeout = new ArrayList<Long>();
 	private static ArrayList<Long> RTTA = new ArrayList<Long>();
 	private static ArrayList<Integer> tries = new ArrayList<Integer>();
+	private static ArrayList<String> packets = new ArrayList<String>();
+	private static ArrayList<byte[]> barray = new ArrayList<byte[]>();
 	private static long  time1 = 0, time2 = 0, oldRTT, newRTT, RTT = 0, a=5;
 	private static BufferedReader inFromUser;
 	private static DatagramSocket socket;
 	private static ED_Coder coder;
 	private static Cutter cutter;
+	private static byte[] sendData;
+	private static byte[] receiveData;
+	private static InetAddress IPAddress;
+	private static byte[] receivedData = new byte[1024];
+	private static ArrayList<String> CPNo = new ArrayList<String>();		//CPNo = Client Package Number
+	private static DatagramPacket sendPacket, receivePacket, receivedReciept;
 
 	public static void main(String args[]) throws Exception{
 
@@ -29,15 +37,15 @@ class UDPClient{
 		socket = new DatagramSocket();
 
 		//Three way handshake
-		InetAddress IPAddress = InetAddress.getByName("localhost");
-		byte[] sendData = new byte[1024];
-		byte[] receiveData = new byte[1024];
+		IPAddress = InetAddress.getByName("localhost");
+		sendData = new byte[1024];
+		receiveData = new byte[1024];
 
-		String clientSYN = "SYN";
-		String clientACK = "ACK";
+		clientSYN = "SYN";
+		clientACK = "ACK";
 
 		sendData = clientSYN.getBytes();
-		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+		sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 
 
 		for(int i =0; i<6;i++){
@@ -48,13 +56,13 @@ class UDPClient{
 
 			socket.setSoTimeout(1000);
 
-			DatagramPacket receivePacket = new DatagramPacket(receiveData,           receiveData.length);
+			receivePacket = new DatagramPacket(receiveData,           receiveData.length);
 			try{
 				socket.receive(receivePacket);
 			}catch(IOException e){
 
 			}
-			String serverSYNACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
+			serverSYNACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
 
 			if(serverSYNACK.equals("SYN+ACK")){
 				System.out.println("RECEIVED FROM SERVER: " + serverSYNACK);
@@ -68,9 +76,7 @@ class UDPClient{
 				System.out.print("Connection timed out");
 			}
 		}
-
 		//Testing Ping 10 times
-		
 
 		for(int i= 0; i < 10; i++){
 			time1 = System.currentTimeMillis();
@@ -90,11 +96,11 @@ class UDPClient{
 			receiveData = new byte[1024];
 			DatagramPacket got = new DatagramPacket(receiveData, receiveData.length);
 			socket.receive(got);
-			String f = new String( got.getData(), got.getOffset(), got.getLength(), "UTF-8");
-			System.out.println("FROM SERVER: "+f);
+			message = new String( got.getData(), got.getOffset(), got.getLength(), "UTF-8");
+			System.out.println("FROM SERVER: "+message);
 			time2 = System.currentTimeMillis();
 
-			RTTA.add(time2-Long.parseLong(f.substring(8,f.length())));
+			RTTA.add(time2-Long.parseLong(message.substring(8,message.length())));
 		}
 		for(int i = 1; i<RTTA.size(); i++){
 			oldRTT = RTTA.get(i-1);
@@ -113,15 +119,11 @@ class UDPClient{
 
 		//Below is the actual program
 		while(true){
-			byte[] sendDataServer = new byte[1024];
 
 			//SENDS DATA
 
-			ArrayList<String> packets = new ArrayList<String>();
-			ArrayList<byte[]> barray = new ArrayList<byte[]>();
-
 			//Input from user
-			String sentence = inFromUser.readLine();
+			sentence = inFromUser.readLine();
 
 			try{
 				//Cut the message into appropriate sized data amounts
@@ -147,37 +149,29 @@ class UDPClient{
 					//Timer and counter for each package starts here
 					timeout.add(System.currentTimeMillis());
 					tries.add(1);
-
 				}
 
 				//RESEND
-
+				
 				//puts packet numbers in an array
-				ArrayList<String> CPNo = new ArrayList<String>(); //CPNo = Client Package Number
 				for(int i=0;i<packets.size();i++){
 					CPNo.add(packets.get(i).substring(0, 8));
 				}
 				//resending lost packages
 
 				while(true){
-					
-					Thread.sleep(RTT);
+					//Thread.sleep(RTT);
 					for(int j = 0 ; j < CPNo.size() ; j++){
-						System.out.println("CPNo Size = " + CPNo.size());
 						// recieves the reciept
 						byte[] receivedData = new byte[8];
-						DatagramPacket receivedReciept = new DatagramPacket(receivedData, receivedData.length);
-						try{
+						receivedReciept = new DatagramPacket(receivedData, receivedData.length);
 						socket.receive(receivedReciept);
-						}catch(SocketTimeoutException e){
-							System.out.println("Failed to recieve reciept");
-						}
 						System.out.println("Reciept recieved from server");
 						input = new String( receivedReciept.getData(), receivedReciept.getOffset(), receivedReciept.getLength(), "UTF-8");
-						String SPNo = input; //SPNo = Server Package Number
+						SPNo = input; //SPNo = Server Package Number
 						//handles reciepts to see if all packages were recieved
 						for(int i = 0 ; i < CPNo.size() ; i++){
-							if(SPNo == CPNo.get(i)){
+							if(SPNo.equals(CPNo.get(i))){
 								CPNo.remove(i);
 							}
 						}
@@ -205,24 +199,8 @@ class UDPClient{
 						}
 					}
 				}
-
+				
 				//RECIEVE DATA
-
-				//				I have no idea what this kode does?
-
-				//				//Receives packages (in this case the acks) from server (WILL STOP WHEN THE CORRECT AMOUNT OF ACK's HAVE BEEN RECEIVED. LOOK HERE LARS AND SEBBYG. (gensendelse))
-				//				for(int i = 0; i < packets.size()+1; i++){
-				//					//Receives one package from the server
-				//					byte[] receivedData = new byte[1024];
-				//					DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
-				//					clientSocket.receive(receivedPacket);
-				//
-				//					//Converts the package into a string
-				//					input = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
-				//					System.out.println("FROM SERVER: " + input);
-				//					//Tjek om tiden er g�et her
-				//				}	
-				//
 				if (sentence.equals("close")){
 					socket.close();
 					System.out.println("Shutting Down");
@@ -232,7 +210,6 @@ class UDPClient{
 					while(true){
 
 						//Receives one package from the server (in this case the fruit response)
-						byte[] receivedData = new byte[1024];
 						DatagramPacket receivedPacket = new DatagramPacket(receivedData, receivedData.length);
 						socket.receive(receivedPacket);
 
@@ -246,15 +223,17 @@ class UDPClient{
 						//Receipt
 						String forTheReceiept = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 						reciept = forTheReceiept.substring(0,8);
-						sendDataServer = reciept.getBytes();
-						DatagramPacket sendreciept = new DatagramPacket(sendDataServer, sendDataServer.length, IPAddressServer, port);
+						sendData = new byte[8];
+						sendData = reciept.getBytes();
+						DatagramPacket sendreciept = new DatagramPacket(sendData, sendData.length, IPAddressServer, port);
 						socket.send(sendreciept);
+						System.out.println("Reciept sent to Server");
 
 						//Checks if it is receiving the last package
-						if(!(coder.getMessageArray().contains(null)) && (coder.getMessageArray().get(coder.getMessageArray().size()).equals("last"))){
+						if(!(coder.getMessageArray().contains(null)) && (coder.getMessageArray().get(coder.getMessageArray().size()-1).equals("last"))){
 							//TODO Timeout 
 							//last packet is removed because it is just a notice
-							coder.getMessageArray().remove(coder.getMessageArray().get(coder.getMessageArray().size()));
+							coder.getMessageArray().remove(coder.getMessageArray().get(coder.getMessageArray().size()-1));
 							//creates the long String
 							for(int i = 0; i < coder.getMessageArray().size(); i++){
 								completeMessage = completeMessage + coder.getMessageArray().get(i);

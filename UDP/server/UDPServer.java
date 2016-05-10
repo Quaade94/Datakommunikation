@@ -15,31 +15,38 @@ class UDPServer{
 	private static ArrayList<Long> timeout = new ArrayList<Long>();
 	private static ArrayList<Integer> tries = new ArrayList<Integer>();
 	private static ArrayList<String> pings = new ArrayList<String>();
-	private static String frugt, frugter = "", reciept, completeMessage = "";
+	private static String frugt, frugter = "", reciept, completeMessage = "", serverSYNACK, clientSYN, clientACK, message, forTheReciept, input;
 	private static int id = 0, port, tryAmount = 5;
 	private static InetAddress IPAddress;
 	private static long RTT;
-
+	private static ArrayList<byte[]> barray = new ArrayList<byte[]>();
+	private static ArrayList<String> packets = new ArrayList<String>();
+	private static ArrayList<String> SPNo = new ArrayList<String>(); //CPNo = Client Package Number
+	private static FruitData fruit;
+	private static Cutter cutter;
+	private static ED_Coder coder;
+	private static byte[] receiveData, sendData;
+	private static DatagramPacket sendPacket, receivePacket, sendPacket1, recievePing, sendPing, getRTT, sendreciept, receivedPacket, receivedReciept;
 
 	public static void main(String args[]) throws Exception{
 
-		FruitData fruit = new FruitData();
-		Cutter cutter = new Cutter(1024, 12);
-		ED_Coder coder = new ED_Coder();
+		fruit = new FruitData();
+		cutter = new Cutter(1024, 12);
+		coder = new ED_Coder();
 		socket = new DatagramSocket(9876);
 
-		byte[] receiveData = new byte[1024];
-		byte[] sendData = new byte[1024];
-		String serverSYNACK ="SYN+ACK";
-		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+		receiveData = new byte[1024];
+		sendData = new byte[1024];
+		serverSYNACK ="SYN+ACK";
+		sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 
 
 		//Three way handshake
 
 
-		DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+		receivePacket = new DatagramPacket(receiveData, receiveData.length);
 		socket.receive(receivePacket);		
-		String clientSYN = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
+		clientSYN = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
 		if(clientSYN.equals("SYN")){
 			System.out.println("RECEIVED: "+clientSYN);
 
@@ -47,7 +54,7 @@ class UDPServer{
 				IPAddress = receivePacket.getAddress();
 				port = receivePacket.getPort();
 				sendData = serverSYNACK.getBytes();
-				DatagramPacket sendPacket1 = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+				sendPacket1 = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 				socket.send(sendPacket1);
 				System.out.println("SENT: "+serverSYNACK);
 
@@ -58,7 +65,7 @@ class UDPServer{
 				}catch(IOException e){
 
 				}
-				String clientACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
+				clientACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
 				if(clientACK.equals("ACK")){
 					System.out.println("RECEIVED: "+clientACK);
 					break;
@@ -69,15 +76,15 @@ class UDPServer{
 		socket.setSoTimeout(0);
 
 		//ping
-		String message = null;
+		message = null;
 		while(true){
 
 			//recieves ping
 
 			receiveData = new byte[1024];
-			DatagramPacket got = new DatagramPacket(receiveData, receiveData.length);
-			socket.receive(got);
-			message = new String( got.getData(), got.getOffset(), got.getLength(), "UTF-8");
+			recievePing = new DatagramPacket(receiveData, receiveData.length);
+			socket.receive(recievePing);
+			message = new String( recievePing.getData(), recievePing.getOffset(), recievePing.getLength(), "UTF-8");
 			pings.add(message);
 			System.out.println("FROM CLIENT: "+message);
 			if(pings.size()>=10)
@@ -87,15 +94,15 @@ class UDPServer{
 			message = pings.get(i);
 			sendData = new byte[1024];
 			sendData = message.getBytes();
-			DatagramPacket sendgota = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-			socket.send(sendgota);
+			sendPing = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+			socket.send(sendPing);
 			System.out.println("TO CLIENT: " + message);
 		}
 		try{
 			receiveData = new byte[1024];
-			DatagramPacket got = new DatagramPacket(receiveData, receiveData.length);
-			socket.receive(got);
-			message = new String( got.getData(), got.getOffset(), got.getLength(), "UTF-8");
+			getRTT = new DatagramPacket(receiveData, receiveData.length);
+			socket.receive(getRTT);
+			message = new String( getRTT.getData(), getRTT.getOffset(), getRTT.getLength(), "UTF-8");
 			RTT = Long.parseLong(message.substring(4,message.length()));
 			System.out.println("RTT was recieved from client: " + RTT + " ms");
 		}catch(Exception e){
@@ -108,9 +115,8 @@ class UDPServer{
 			//Receives packages from the client, until package containing the string "last" is received
 			receiveData = new byte[1024];
 			sendData = new byte[1024];
-			DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
+			receivedPacket = new DatagramPacket(receiveData, receiveData.length);
 			socket.receive(receivedPacket);
-
 
 			//Gets the adress of the sender
 			IPAddress = receivedPacket.getAddress();
@@ -120,11 +126,13 @@ class UDPServer{
 			coder.decode(receivedPacket);
 
 			//sends reciepts for recieved packets
-			String forTheReciept = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
+			forTheReciept = new String( receivedPacket.getData(), receivedPacket.getOffset(), receivedPacket.getLength(), "UTF-8");
 			reciept = forTheReciept.substring(0,8);
+			sendData = new byte[8];
 			sendData = reciept.getBytes();
-			DatagramPacket sendreciept = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+			sendreciept = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 			socket.send(sendreciept);
+			System.out.println("Reciept sent to Client");
 
 			if(!(coder.getMessageArray().contains(null)) && (coder.getMessageArray().get(coder.getMessageArray().size() - 1).equals("last"))){
 				//TODO Timeout 
@@ -138,7 +146,6 @@ class UDPServer{
 				break;
 			}
 		}
-
 		//SENDS DATA
 
 		//if the message is "close" shutdown
@@ -163,15 +170,10 @@ class UDPServer{
 				socket.send(sendPacket);
 			}
 
-			ArrayList<byte[]> barray = new ArrayList<byte[]>();
-			ArrayList<String> packets = new ArrayList<String>();
-
-			//				ArrayList<String> received = new ArrayList<String>();
-
 			//Input from Frugt
 			String sentence = frugter;
-
 			try{
+				
 				//Cut the message into appropriate sized data amounts
 				packets = cutter.messageCutting(sentence);
 				packets.add("last");
@@ -195,38 +197,29 @@ class UDPServer{
 					//Timer and counter for each package starts here
 					timeout.add(System.currentTimeMillis());
 					tries.add(1);
-
 				}
-
 			}catch(UDPException e){
 				e.myprint();
 			}
-			String input;
-
 			//puts packet numbers in an array
-			ArrayList<String> SPNo = new ArrayList<String>(); //CPNo = Client Package Number
 			for(int i=0;i<packets.size();i++){
 				SPNo.add(packets.get(i).substring(0, 8));
 			}
+			
 			//Resending lost packets
-
 			while(true){
+				//Thread.sleep(RTT);
 				for(int j = 0 ; j < SPNo.size() ; j++){
-
 					// recieves the reciept
 					byte[] receivedData = new byte[8];
-					DatagramPacket receivedReciept = new DatagramPacket(receivedData, receivedData.length);
-					socket.setSoTimeout((int)RTT);
-					try{
+					receivedReciept = new DatagramPacket(receivedData, receivedData.length);
 					socket.receive(receivedReciept);
-					}catch(SocketTimeoutException e){
-						System.out.println("Failed to recieve reciept");
-					}					System.out.println("Reciept recieved from client");
+					System.out.println("Reciept recieved from client");
 					input = new String( receivedReciept.getData(), receivedReciept.getOffset(), receivedReciept.getLength(), "UTF-8");
 					String CPNo = input; //SPNo = Server Package Number
 					//handles reciepts to see if all packages were recieved
 					for(int i = 0 ; i < SPNo.size() ; i++){
-						if(CPNo == SPNo.get(i)){
+						if(CPNo.equals(SPNo.get(i))){
 							SPNo.remove(i);
 						}
 					}
@@ -235,6 +228,7 @@ class UDPServer{
 
 					socket.close();
 					System.out.println("the socket was closed");
+					System.exit(0);
 				}else{
 					//for the missing packets:
 					for(int i = 0; i < SPNo.size(); i++){
