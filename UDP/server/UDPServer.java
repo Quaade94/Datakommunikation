@@ -42,8 +42,12 @@ class UDPServer{
 
 
 		//Three way handshake
-
-
+		//"outerloop:" is a "label" that makes the while loop breakable from within the nested for-loop.
+		//this makes the program able to use while(true) to restart from the beginning of the while loop if the "ACK"
+		// from the client is not received after 6 tries, thus listening to the first "SYN" from the client again and break
+		// the while loop from within the for-loop if "ACK" is received correctly.
+outerloop:				
+	while(true){	
 		receivePacket = new DatagramPacket(receiveData, receiveData.length);
 		socket.receive(receivePacket);		
 		clientSYN = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
@@ -68,10 +72,11 @@ class UDPServer{
 				clientACK = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(),"UTF-8");
 				if(clientACK.equals("ACK")){
 					System.out.println("RECEIVED: "+clientACK);
-					break;
+					break outerloop;								// se kommentar om outloop label længere oppe
 				}
 			}
 		}
+	}
 
 		socket.setSoTimeout(0);
 
