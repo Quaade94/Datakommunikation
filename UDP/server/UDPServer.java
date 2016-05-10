@@ -64,6 +64,11 @@ class UDPServer{
 			}
 		}
 		serverSocket.setSoTimeout(0);
+		
+		//ping
+		
+		
+		
 
 		//RECIEVES DATA
 		while (true){

@@ -60,20 +60,11 @@ class UDPClient{
 			}
 			if(i == 5){
 				System.out.print("Connection timed out");
-				return;
 			}
 		}
 
-
-
-
-
-
-
-
-
 		//Testing Ping 10 times
-		//Sends a request to the server for and answer and listens, theirfor there is no need for code on the server side.
+		//Sends a request to the server for and answer and listens, therefore there is no need for code on the server side.
 		DatagramPacket request;
 		String message, line;
 		long[] RTTa = new long[10];
@@ -82,7 +73,6 @@ class UDPClient{
 
 		for(int i= 0; i < 10; i++){
 			time1 = System.currentTimeMillis();
-			System.out.println("Time1 just startetet: " + time1);
 			message = "Ping "+i+": "+time1;
 			request = new DatagramPacket(message.getBytes(),message.length(),IPAddress,port);
 			clientSocket.send(request);
@@ -99,7 +89,6 @@ class UDPClient{
 			BufferedReader br = new BufferedReader(isr);
 			line = br.readLine();
 			time2 = System.currentTimeMillis();
-			System.out.println("time2 was just taken: " + time2);
 			RTTa[i] = time2-time1;
 			
 			System.out.println("Recieved from " + request.getAddress().getHostAddress()+": " + line.substring(0,8)+(time2-time1)+" ms");
@@ -113,13 +102,6 @@ class UDPClient{
 			first = true;
 		}
 		
-		System.out.println("Round Trip Time: "+RTT+" ms");
-
-
-
-
-
-
 		//Below is the actual program
 		while(true){
 			byte[] sendDataServer = new byte[1024];
