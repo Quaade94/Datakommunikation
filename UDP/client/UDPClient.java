@@ -10,13 +10,10 @@ import cutter.UDPException;
 
 class UDPClient{
 
-	private static String completeMessage = "";
-	private static String input;
-	private static String reciept;
-	private static int port;
+	private static String completeMessage = "", input, reciept;
+	private static int port =  9876, tryAmount = 5;
 	private static ArrayList<Long> timeout = new ArrayList<Long>();
 	private static ArrayList<Integer> tries = new ArrayList<Integer>();
-	private static int tryAmount = 5;
 
 	public static void main(String args[]) throws Exception{
 
@@ -25,8 +22,6 @@ class UDPClient{
 		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
 		DatagramSocket clientSocket = new DatagramSocket();
 
-		port = 9876;
-		
 		//Three way handshake
 		InetAddress IPAddress = InetAddress.getByName("localhost");
 		byte[] sendData = new byte[1024];
@@ -34,7 +29,6 @@ class UDPClient{
 
 		String clientSYN = "SYN";
 		String clientACK = "ACK";
-
 
 		sendData = clientSYN.getBytes();
 		DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
@@ -70,34 +64,62 @@ class UDPClient{
 			}
 		}
 
+
+
+
+
+
+
+
+
 		//Testing Ping 10 times
 		//Sends a request to the server for and answer and listens, theirfor there is no need for code on the server side.
-		long[] ping = new long[10];
-		long sum = 0;
-		long RTT = 0;
+		DatagramPacket request;
+		String message, line;
+		long[] RTTa = new long[10];
+		long  time1, time2 = 0, oldRTT, newRTT, RTT = 0, a=5;
+		boolean first = false;
+
 		for(int i= 0; i < 10; i++){
-			long time1 = System.currentTimeMillis();
-			String message = "Ping "+i+": "+time1;
-			DatagramPacket request = new DatagramPacket(message.getBytes(),message.length(),IPAddress,port);
+			time1 = System.currentTimeMillis();
+			System.out.println("Time1 just startetet: " + time1);
+			message = "Ping "+i+": "+time1;
+			request = new DatagramPacket(message.getBytes(),message.length(),IPAddress,port);
 			clientSocket.send(request);
 			DatagramPacket reply = new DatagramPacket(new byte[1024],1024);
 
-			//timeout for ping (1 second)
-			clientSocket.setSoTimeout(1000);
 			try{
 				clientSocket.receive(reply);
 			}catch(IOException e){
 
 			}
-			ping[i] = printData(request,time1);
-			//1 second delay for each ping
-			Thread.sleep(1000);
+			byte[] buf = request.getData();
+			ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+			InputStreamReader isr = new InputStreamReader(bais);
+			BufferedReader br = new BufferedReader(isr);
+			line = br.readLine();
+			time2 = System.currentTimeMillis();
+			System.out.println("time2 was just taken: " + time2);
+			RTTa[i] = time2-time1;
+			
+			System.out.println("Recieved from " + request.getAddress().getHostAddress()+": " + line.substring(0,8)+(time2-time1)+" ms");
+			
+			if(first){
+				oldRTT = RTTa[i-1];
+				newRTT = RTTa[i];
+				a = a/10;
+			RTT = (a*oldRTT)+((1-a)*newRTT);
+			}
+			first = true;
 		}
-		for(int i= 0; i < ping.length; i++){
-			sum = sum + ping[i];
-		}
-		RTT = (sum / ping.length) + 5;
-		System.out.println("Round Trip Time: "+RTT+"ms");
+		
+		System.out.println("Round Trip Time: "+RTT+" ms");
+
+
+
+
+
+
 		//Below is the actual program
 		while(true){
 			byte[] sendDataServer = new byte[1024];
@@ -187,6 +209,7 @@ class UDPClient{
 									tries.set(k, (tries.get(k) + 1));
 									if(System.currentTimeMillis()-timeout.get(k)> RTT||tries.get(k)>=tryAmount){
 										System.out.println("Failed to deliver package no. " + k + " Attempts: " + tries.get(k) + " Timeout: " + timeout.get(k));
+										break;
 									}
 								}
 							}
@@ -259,28 +282,5 @@ class UDPClient{
 			}
 			clientSocket.close();
 		}
-	}
-
-
-
-	//PING METHOD
-	//Recieves, works out, and prints the ping
-	private static long printData(DatagramPacket request,long time1)throws Exception{
-		byte[] buf = request.getData();
-		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-		InputStreamReader isr = new InputStreamReader(bais);
-		BufferedReader br = new BufferedReader(isr);
-		String line = br.readLine();
-		long time2 = -1;
-		try{
-			time2  = Long.parseLong(line.substring(8, line.length()));
-		}catch(NumberFormatException e){
-			System.out.println("Failed to convert String to Long");
-			System.out.println("Ping failed!");
-		}
-		long time = time2-time1;
-		System.out.println("Recieved from " + request.getAddress().getHostAddress()+": " + line.substring(0,8)+time+" ms");
-
-		return time;
 	}
 }

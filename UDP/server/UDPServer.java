@@ -11,18 +11,12 @@ import cutter.UDPException;
 
 class UDPServer{
 
-	private static String frugt;
-	private static String frugter;
-	private static String input;
-	private static int id = 0;
-	private static String reciept;
-	private static InetAddress IPAddress;
-	private static int port;
-	private static String completeMessage = "";
 	private static DatagramSocket serverSocket;
 	private static ArrayList<Long> timeout = new ArrayList<Long>();
 	private static ArrayList<Integer> tries = new ArrayList<Integer>();
-	private static int tryAmount = 5;
+	private static String frugt, frugter, input, reciept, completeMessage = "";
+	private static int id = 0, port, tryAmount = 5;
+	private static InetAddress IPAddress;
 
 
 	public static void main(String args[]) throws Exception{
@@ -220,8 +214,10 @@ class UDPServer{
 										serverSocket.send(sendPacket);	
 										//Timer check here
 										tries.set(k, (tries.get(k) + 1));
-										if(System.currentTimeMillis()-timeout.get(k)> RTT||tries.get(k)>=tryAmount){
+										//TODO
+										if(System.currentTimeMillis()-timeout.get(k)> 5||tries.get(k)>=tryAmount){
 											System.out.println("Failed to deliver package no. " + k + " Attempts: " + tries.get(k) + " Timeout: " + timeout.get(k));
+										break;
 										}
 									}
 								}
