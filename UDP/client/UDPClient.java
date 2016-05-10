@@ -74,6 +74,7 @@ class UDPClient{
 			}
 			if(i == 5){
 				System.out.print("Connection timed out");
+				return;
 			}
 		}
 		//Testing Ping 10 times
