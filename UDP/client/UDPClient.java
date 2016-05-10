@@ -64,44 +64,48 @@ class UDPClient{
 		}
 
 		//Testing Ping 10 times
-		//Sends a request to the server for and answer and listens, therefore there is no need for code on the server side.
-		DatagramPacket request;
-		String message, line;
-		long[] RTTa = new long[10];
-		long  time1, time2 = 0, oldRTT, newRTT, RTT = 0, a=5;
-		boolean first = false;
+		ArrayList<Long> RTTA = new ArrayList<Long>();
+		long  time1 = 0, time2 = 0, oldRTT, newRTT, RTT = 0, a=5;
 
 		for(int i= 0; i < 10; i++){
 			time1 = System.currentTimeMillis();
-			message = "Ping "+i+": "+time1;
-			request = new DatagramPacket(message.getBytes(),message.length(),IPAddress,port);
-			clientSocket.send(request);
-			DatagramPacket reply = new DatagramPacket(new byte[1024],1024);
+			String message = "Ping "+i+": "+time1;
 
-			try{
-				clientSocket.receive(reply);
-			}catch(IOException e){
-
-			}
-			byte[] buf = request.getData();
-			ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-			InputStreamReader isr = new InputStreamReader(bais);
-			BufferedReader br = new BufferedReader(isr);
-			line = br.readLine();
-			time2 = System.currentTimeMillis();
-			RTTa[i] = time2-time1;
-			
-			System.out.println("Recieved from " + request.getAddress().getHostAddress()+": " + line.substring(0,8)+(time2-time1)+" ms");
-			
-			if(first){
-				oldRTT = RTTa[i-1];
-				newRTT = RTTa[i];
-				a = a/10;
-			RTT = (a*oldRTT)+((1-a)*newRTT);
-			}
-			first = true;
+			//sends ping
+			sendData = new byte[1024];
+			sendData = message.getBytes();
+			sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+			clientSocket.send(sendPacket);
+			System.out.println("TO SERVER: " + message);
 		}
-		
+			
+		while(RTTA.size()<10){
+
+			//recieves ping
+			receiveData = new byte[1024];
+			DatagramPacket got = new DatagramPacket(receiveData, receiveData.length);
+			clientSocket.receive(got);
+			String f = new String( got.getData(), got.getOffset(), got.getLength(), "UTF-8");
+			System.out.println("FROM SERVER: "+f);
+			time2 = System.currentTimeMillis();
+
+			RTTA.add(time2-Long.parseLong(f.substring(8,f.length())));
+		}
+		for(int i = 1; i<RTTA.size(); i++){
+			oldRTT = RTTA.get(i-1);
+			newRTT = RTTA.get(i);
+			a = a/10;
+			RTT = (a*oldRTT)+((1-a)*newRTT);
+			RTT = RTT *(long)1.1;
+			System.out.println("Round trip time: " + RTT + " ms");
+		}
+		String message = "RTT="+RTT;
+		sendData = new byte[1024];
+		sendData = message.getBytes();
+		sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+		clientSocket.send(sendPacket);
+		System.out.println("TO SERVER: " + message);
+
 		//Below is the actual program
 		while(true){
 			byte[] sendDataServer = new byte[1024];

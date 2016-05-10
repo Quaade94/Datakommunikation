@@ -14,9 +14,11 @@ class UDPServer{
 	private static DatagramSocket serverSocket;
 	private static ArrayList<Long> timeout = new ArrayList<Long>();
 	private static ArrayList<Integer> tries = new ArrayList<Integer>();
-	private static String frugt, frugter, input, reciept, completeMessage = "";
+	private static ArrayList<String> pings = new ArrayList<String>();
+	private static String frugt, frugter, reciept, completeMessage = "";
 	private static int id = 0, port, tryAmount = 5;
 	private static InetAddress IPAddress;
+	private static long RTT;
 
 
 	public static void main(String args[]) throws Exception{
@@ -25,7 +27,7 @@ class UDPServer{
 		Cutter cutter = new Cutter(1024, 12);
 		ED_Coder coder = new ED_Coder();
 		serverSocket = new DatagramSocket(9876);
-		
+
 		byte[] receiveData = new byte[1024];
 		byte[] sendData = new byte[1024];
 		String serverSYNACK ="SYN+ACK";
@@ -42,8 +44,8 @@ class UDPServer{
 			System.out.println("RECEIVED: "+clientSYN);
 
 			for(int i=0; i<6; i++){
-				InetAddress IPAddress = receivePacket.getAddress();
-				int port = receivePacket.getPort();
+				IPAddress = receivePacket.getAddress();
+				port = receivePacket.getPort();
 				sendData = serverSYNACK.getBytes();
 				DatagramPacket sendPacket1 = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 				serverSocket.send(sendPacket1);
@@ -63,12 +65,42 @@ class UDPServer{
 				}
 			}
 		}
+		
 		serverSocket.setSoTimeout(0);
-		
+
 		//ping
-		
-		
-		
+		String message = null;
+		while(true){
+
+			//recieves ping
+			
+			receiveData = new byte[1024];
+			DatagramPacket got = new DatagramPacket(receiveData, receiveData.length);
+			serverSocket.receive(got);
+			message = new String( got.getData(), got.getOffset(), got.getLength(), "UTF-8");
+			pings.add(message);
+			System.out.println("FROM CLIENT: "+message);
+			if(pings.size()>=10)
+				break;
+		}
+		for(int i = 0; i<pings.size();i++){
+			message = pings.get(i);
+			sendData = new byte[1024];
+			sendData = message.getBytes();
+			DatagramPacket sendgota = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+			serverSocket.send(sendgota);
+			System.out.println("TO CLIENT: " + message);
+		}
+		try{
+			receiveData = new byte[1024];
+			DatagramPacket got = new DatagramPacket(receiveData, receiveData.length);
+			serverSocket.receive(got);
+			message = new String( got.getData(), got.getOffset(), got.getLength(), "UTF-8");
+			RTT = Long.parseLong(message.substring(4,message.length()));
+			System.out.println("RTT was recieved from client: " + RTT + " ms");
+		}catch(Exception e){
+			System.out.println("Failed to recieve RTT from client!");
+		}
 
 		//RECIEVES DATA
 		while (true){
@@ -219,10 +251,9 @@ class UDPServer{
 										serverSocket.send(sendPacket);	
 										//Timer check here
 										tries.set(k, (tries.get(k) + 1));
-										//TODO
-										if(System.currentTimeMillis()-timeout.get(k)> 5||tries.get(k)>=tryAmount){
+										if(System.currentTimeMillis()-timeout.get(k)> RTT||tries.get(k)>=tryAmount){
 											System.out.println("Failed to deliver package no. " + k + " Attempts: " + tries.get(k) + " Timeout: " + timeout.get(k));
-										break;
+											break;
 										}
 									}
 								}
